@@ -53,7 +53,7 @@ class SummaryScreen extends ConsumerWidget {
 
           final data = snapshot.data ?? const [0, 0];
           final mealsCount = data[0];
-          final workoutsCount = data[0];
+          final workoutsCount = data[1];
 
           return Padding(
             padding: const EdgeInsets.all(16.0),

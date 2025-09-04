@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../services/local_db.dart';
 import '../../services/providers.dart';
+import 'package:drift/drift.dart' show Value;
 
 class MealsListScreen extends ConsumerWidget {
   const MealsListScreen({super.key});
@@ -58,28 +59,44 @@ class MealsListScreen extends ConsumerWidget {
                 },
                 child: ListTile(
                   title: Text(meal.name),
-                  subtitle: Text(meal.createdAt.toString()),
+                  subtitle: Text(
+                    "${meal.calories ?? 0} kcal • ${meal.createdAt}",
+                  ),
                 ),
               );
             },
           );
         },
       ),
+      // FAB (Floating Action Button)
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final controller = TextEditingController();
+          final nameController = TextEditingController();
+          final caloriesController = TextEditingController();
 
-          final result = await showDialog<String>(
+          final result = await showDialog<Map<String, String>>(
             context: context,
             builder: (context) {
               return AlertDialog(
                 title: const Text("Add meal"),
-                content: TextField(
-                  controller: controller,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    hintText: "Enter meal name:",
-                  ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        hintText: "Enter meal name:",
+                      ),
+                    ),
+                    TextField(
+                      controller: caloriesController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        hintText: "Enter calories",
+                      ),
+                    ),
+                  ],
                 ),
                 actions: [
                   TextButton(
@@ -88,7 +105,10 @@ class MealsListScreen extends ConsumerWidget {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.of(context).pop(controller.text);
+                      Navigator.of(context).pop({
+                        "name": nameController.text,
+                        "calories": caloriesController.text,
+                      });
                     },
                     child: const Text("Add"),
                   ),
@@ -97,9 +117,14 @@ class MealsListScreen extends ConsumerWidget {
             },
           );
 
-          if (result != null && result.trim().isNotEmpty) {
+          if (result != null && result["name"]!.trim().isNotEmpty) {
             final db = ref.read(dbProvider);
-            await db.insertMeal(MealsCompanion.insert(name: result.trim()));
+            await db.insertMeal(
+              MealsCompanion.insert(
+                name: result["name"]!.trim(),
+                calories: Value(int.tryParse(result["calories"] ?? "")),
+              ),
+            );
           }
         },
         child: const Icon(Icons.add),
