@@ -1,37 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
-import '../../services/local_db.dart';
-import '../../services/providers.dart';
-import 'package:drift/drift.dart' show Value;
+import '../../services/supabase_service.dart';
+import '../../services/supabase_providers.dart';
 
 class MealsListScreen extends ConsumerWidget {
   const MealsListScreen({super.key});
 
+  String _formatDate(String? iso) {
+    if (iso == null) return '';
+    try {
+      final dt = DateTime.parse(iso).toLocal();
+      return DateFormat.yMMMd().add_jm().format(dt);
+    } catch (e) {
+      return iso;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final db = ref.watch(dbProvider);
+    final mealsAsync = ref.watch(mealsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text("Meals")),
-      body: StreamBuilder(
-        stream: db.watchAllMeals(), // auto-updates on DB changes
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final meals = snapshot.data!;
+      body: mealsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, st) => Center(child: Text('Error: $err')),
+        data: (meals) {
           if (meals.isEmpty) {
-            return const Center(child: Text("No meals yet. Add one!"));
+            return const Center(child: Text("No meals yet, Add one!"));
           }
-
           return ListView.builder(
             itemCount: meals.length,
             itemBuilder: (context, index) {
               final meal = meals[index];
+              final id = meal['id'] as String;
+              final name = (meal['name'] ?? '') as String;
+              final calories = (meal['calories'] as num?)?.toInt();
+              final createdAt = _formatDate(meal['createdAt'] as String?);
+
               return Dismissible(
-                key: Key(meal.id),
+                key: Key(id),
                 direction: DismissDirection.endToStart,
                 background: Container(
                   color: Colors.red,
@@ -39,29 +49,28 @@ class MealsListScreen extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: const Icon(Icons.delete, color: Colors.white),
                 ),
-                onDismissed: (direction) async {
+                onDismissed: (direction) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text("${meal.name} deleted"),
+                      content: Text("$name deleted"),
                       duration: const Duration(seconds: 4),
                       action: SnackBarAction(
                         label: 'Undo',
                         onPressed: () async {
-                          await db.insertMeal(
-                            MealsCompanion.insert(name: meal.name),
-                          );
+                          await supabaseService.insertMeal(name, calories);
+                          ref.refresh(mealsProvider);
                         },
                       ),
                     ),
                   );
 
-                  await db.deleteMeal(meal.id);
+                  supabaseService.deleteMeal(id).then((_) {
+                    ref.refresh(mealsProvider);
+                  });
                 },
                 child: ListTile(
-                  title: Text(meal.name),
-                  subtitle: Text(
-                    "${meal.calories ?? 0} kcal • ${meal.createdAt}",
-                  ),
+                  title: Text(name),
+                  subtitle: Text("${calories ?? 0} kcal • $createdAt"),
                 ),
               );
             },
@@ -118,13 +127,10 @@ class MealsListScreen extends ConsumerWidget {
           );
 
           if (result != null && result["name"]!.trim().isNotEmpty) {
-            final db = ref.read(dbProvider);
-            await db.insertMeal(
-              MealsCompanion.insert(
-                name: result["name"]!.trim(),
-                calories: Value(int.tryParse(result["calories"] ?? "")),
-              ),
-            );
+            final name = result["name"]!.trim();
+            final calories = int.tryParse(result["calories"] ?? "");
+            await supabaseService.inserMeal(name, calories);
+            ref.refresh(mealsProvider);
           }
         },
         child: const Icon(Icons.add),
