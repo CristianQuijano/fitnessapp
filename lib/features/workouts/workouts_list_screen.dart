@@ -1,36 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../services/local_db.dart';
-import '../../services/providers.dart';
+import 'package:intl/intl.dart';
+import 'package:simplefit_log/services/supabase_providers.dart';
 
 class WorkoutsListScreen extends ConsumerWidget {
   const WorkoutsListScreen({super.key});
 
+  String _formatDate(String? iso) {
+    if (iso == null) return '';
+    try {
+      final dt = DateTime.parse(iso).toLocal();
+      return DateFormat.yMMMd().add_jm().format(dt);
+    } catch (e) {
+      return iso;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final db = ref.watch(dbProvider);
+    final workoutsAsync = ref.watch(workoutsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text("Workouts")),
-      body: StreamBuilder(
-        stream: db.watchAllWorkouts(), // auto-updates on db changes
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final workouts = snapshot.data!;
+      body: workoutsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, st) => Center(child: Text('Error: $err')),
+        data: (workouts) {
           if (workouts.isEmpty) {
-            return const Center(child: Text("No workouts yet. Add one!"));
+            return const Center(child: Text("No workouts yet, add one!"));
           }
-
           return ListView.builder(
             itemCount: workouts.length,
             itemBuilder: (context, index) {
               final workout = workouts[index];
+              final id = workout['id'] as String;
+              final name = (workout['name'] ?? '') as String;
+              final createdAt = _formatDate(workout['created_at'] as String?);
+
               return Dismissible(
-                key: Key(workout.id),
+                key: Key(id),
                 direction: DismissDirection.endToStart,
                 background: Container(
                   color: Colors.red,
@@ -38,27 +46,32 @@ class WorkoutsListScreen extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: const Icon(Icons.delete, color: Colors.white),
                 ),
-                onDismissed: (direction) async {
+                onDismissed: (direction) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text("${workout.name} deleted"),
+                      content: Text("$name deleted"),
                       duration: const Duration(seconds: 4),
                       action: SnackBarAction(
                         label: 'Undo',
                         onPressed: () async {
-                          await db.insertWorkout(
-                            WorkoutsCompanion.insert(name: workout.name),
-                          );
+                          await ref
+                              .read(supabaseServiceProvider)
+                              .insertWorkout(name);
+                          // ignore: unused_result
+                          ref.refresh(workoutsProvider);
                         },
                       ),
                     ),
                   );
 
-                  await db.deleteWorkout(workout.id);
+                  ref.read(supabaseServiceProvider).deleteWorkout(id).then((_) {
+                    // ignore: unused_result
+                    ref.refresh(workoutsProvider);
+                  });
                 },
                 child: ListTile(
-                  title: Text(workout.name),
-                  subtitle: Text(workout.createdAt.toString()),
+                  title: Text(name),
+                  subtitle: Text("$createdAt"),
                 ),
               );
             },
@@ -69,17 +82,22 @@ class WorkoutsListScreen extends ConsumerWidget {
         onPressed: () async {
           final controller = TextEditingController();
 
-          final result = await showDialog<String>(
+          final result = await showDialog<Map<String, String>>(
             context: context,
             builder: (context) {
               return AlertDialog(
                 title: const Text("Add workout"),
-                content: TextField(
-                  controller: controller,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    hintText: "Enter workout name:",
-                  ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: controller,
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        hintText: "Enter workout name:",
+                      ),
+                    ),
+                  ],
                 ),
                 actions: [
                   TextButton(
@@ -88,7 +106,7 @@ class WorkoutsListScreen extends ConsumerWidget {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.of(context).pop(controller.text);
+                      Navigator.of(context).pop({"name": controller.text});
                     },
                     child: const Text("Add"),
                   ),
@@ -97,10 +115,11 @@ class WorkoutsListScreen extends ConsumerWidget {
             },
           );
 
-          if (result != null && result.trim().isNotEmpty) {
-            await db.insertWorkout(
-              WorkoutsCompanion.insert(name: result.trim()),
-            );
+          if (result != null && result["name"]!.trim().isNotEmpty) {
+            final name = result["name"]!.trim();
+            await ref.read(supabaseServiceProvider).insertWorkout(name);
+            // ignore: unused_result
+            ref.refresh(workoutsProvider);
           }
         },
         child: const Icon(Icons.add),
