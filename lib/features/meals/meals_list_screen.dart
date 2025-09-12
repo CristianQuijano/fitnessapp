@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../services/supabase_service.dart';
 import '../../services/supabase_providers.dart';
 
 class MealsListScreen extends ConsumerWidget {
@@ -57,14 +56,18 @@ class MealsListScreen extends ConsumerWidget {
                       action: SnackBarAction(
                         label: 'Undo',
                         onPressed: () async {
-                          await supabaseService.insertMeal(name, calories);
+                          await ref
+                              .read(supabaseServiceProvider)
+                              .insertMeal(name, calories);
+                          // ignore: unused_result
                           ref.refresh(mealsProvider);
                         },
                       ),
                     ),
                   );
 
-                  supabaseService.deleteMeal(id).then((_) {
+                  ref.read(supabaseServiceProvider).deleteMeal(id).then((_) {
+                    // ignore: unused_result
                     ref.refresh(mealsProvider);
                   });
                 },
@@ -129,7 +132,8 @@ class MealsListScreen extends ConsumerWidget {
           if (result != null && result["name"]!.trim().isNotEmpty) {
             final name = result["name"]!.trim();
             final calories = int.tryParse(result["calories"] ?? "");
-            await supabaseService.inserMeal(name, calories);
+            await ref.read(supabaseServiceProvider).insertMeal(name, calories);
+            // ignore: unused_result
             ref.refresh(mealsProvider);
           }
         },
