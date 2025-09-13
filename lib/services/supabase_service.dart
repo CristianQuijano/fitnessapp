@@ -1,11 +1,21 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart';
 
 final supabase = Supabase.instance.client;
 
 class SupabaseService {
   // --- Meals ---
   Future<void> insertMeal(String name, int? calories) async {
-    await supabase.from('meals').insert({'name': name, 'calories': calories});
+    final response = await supabase.from('meals').insert({
+      'name': name,
+      'calories': calories,
+    }).select();
+
+    if (response.isEmpty) {
+      debugPrint("Insert meal failed: $response");
+    } else {
+      debugPrint("Meal inserted: $response");
+    }
   }
 
   Future<List<Map<String, dynamic>>> getAllMeals() async {
@@ -33,7 +43,7 @@ class SupabaseService {
     final response = await supabase
         .from('meals')
         .select()
-        .gte('created at', start.toIso8601String())
+        .gte('created_at', start.toIso8601String())
         .lt('created_at', end.toIso8601String());
 
     return response.length;
