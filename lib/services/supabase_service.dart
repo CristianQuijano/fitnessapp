@@ -28,4 +28,24 @@ class SupabaseService {
   Future<void> deleteWorkout(String id) async {
     await supabase.from('workouts').delete().eq('id', id);
   }
+
+  Future<int> countMealsBetween(DateTime start, DateTime end) async {
+    final response = await supabase
+        .from('meals')
+        .select()
+        .gte('created at', start.toIso8601String())
+        .lt('created_at', end.toIso8601String());
+
+    return response.length;
+  }
+
+  Future<int> countWorkoutsBetween(DateTime start, DateTime end) async {
+    final response = await supabase
+        .from('workouts')
+        .select()
+        .gte('created_at', start.toIso8601String())
+        .lt('created_at', end.toIso8601String());
+
+    return response.length;
+  }
 }

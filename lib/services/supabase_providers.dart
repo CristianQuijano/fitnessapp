@@ -21,3 +21,18 @@ final workoutsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>(
     return service.getAllWorkouts();
   },
 );
+
+final summaryProvider = FutureProvider.autoDispose<Map<String, int>>((
+  ref,
+) async {
+  final service = ref.watch(supabaseServiceProvider);
+
+  final now = DateTime.now();
+  final start = now.subtract(Duration(days: now.weekday - 1)); // Monday
+  final end = start.add(const Duration(days: 7));
+
+  final mealsCount = await service.countMealsBetween(start, end);
+  final workoutsCount = await service.countWorkoutsBetween(start, end);
+
+  return {"meals": mealsCount, "workouts": workoutsCount};
+});
