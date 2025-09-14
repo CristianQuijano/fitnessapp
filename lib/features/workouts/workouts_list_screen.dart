@@ -49,6 +49,14 @@ class WorkoutsListScreen extends ConsumerWidget {
                 onDismissed: (direction) async {
                   // Optimistically remove the item from UI
                   final removedWorkout = workout;
+                  final updatedList = List<Map<String, dynamic>>.from(workouts)
+                    ..removeAt(index);
+
+                  //
+                  //Update the provider with the shorter list immediately
+                  ref.read(workoutsProvider.notifier).state = AsyncValue.data(
+                    updatedList,
+                  );
 
                   // Show snackbar with undo option
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -71,7 +79,7 @@ class WorkoutsListScreen extends ConsumerWidget {
                   // Perform delete in Supabase
                   await ref.read(supabaseServiceProvider).deleteWorkout(id);
 
-                  // Refresg provider to sync wuth Supabase
+                  // Refresh provider to sync with Supabase
                   // ignore: unused_result
                   ref.refresh(workoutsProvider);
                 },
