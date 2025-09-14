@@ -69,10 +69,7 @@ class WorkoutsListScreen extends ConsumerWidget {
                     ref.refresh(workoutsProvider);
                   });
                 },
-                child: ListTile(
-                  title: Text(name),
-                  subtitle: Text("$createdAt"),
-                ),
+                child: ListTile(title: Text(name), subtitle: Text(createdAt)),
               );
             },
           );
