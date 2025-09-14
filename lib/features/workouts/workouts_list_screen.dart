@@ -46,7 +46,11 @@ class WorkoutsListScreen extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: const Icon(Icons.delete, color: Colors.white),
                 ),
-                onDismissed: (direction) {
+                onDismissed: (direction) async {
+                  // Optimistically remove the item from UI
+                  final removedWorkout = workout;
+
+                  // Show snackbar with undo option
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text("$name deleted"),
@@ -56,7 +60,7 @@ class WorkoutsListScreen extends ConsumerWidget {
                         onPressed: () async {
                           await ref
                               .read(supabaseServiceProvider)
-                              .insertWorkout(name);
+                              .insertWorkout(removedWorkout['name'] as String);
                           // ignore: unused_result
                           ref.refresh(workoutsProvider);
                         },
@@ -64,10 +68,12 @@ class WorkoutsListScreen extends ConsumerWidget {
                     ),
                   );
 
-                  ref.read(supabaseServiceProvider).deleteWorkout(id).then((_) {
-                    // ignore: unused_result
-                    ref.refresh(workoutsProvider);
-                  });
+                  // Perform delete in Supabase
+                  await ref.read(supabaseServiceProvider).deleteWorkout(id);
+
+                  // Refresg provider to sync wuth Supabase
+                  // ignore: unused_result
+                  ref.refresh(workoutsProvider);
                 },
                 child: ListTile(title: Text(name), subtitle: Text(createdAt)),
               );
