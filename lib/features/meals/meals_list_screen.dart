@@ -37,7 +37,7 @@ class MealsListScreen extends ConsumerWidget {
               final id = meal['id'] as String;
               final name = (meal['name'] ?? '') as String;
               final calories = (meal['calories'] as num?)?.toInt();
-              final createdAt = _formatDate(meal['createdAt'] as String?);
+              final createdAt = _formatDate(meal['created_at'] as String?);
 
               return Dismissible(
                 key: Key(id),

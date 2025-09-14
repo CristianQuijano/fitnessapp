@@ -6,16 +6,7 @@ final supabase = Supabase.instance.client;
 class SupabaseService {
   // --- Meals ---
   Future<void> insertMeal(String name, int? calories) async {
-    final response = await supabase.from('meals').insert({
-      'name': name,
-      'calories': calories,
-    }).select();
-
-    if (response.isEmpty) {
-      debugPrint("Insert meal failed: $response");
-    } else {
-      debugPrint("Meal inserted: $response");
-    }
+    await supabase.from('meals').insert({'name': name, 'calories': calories});
   }
 
   Future<List<Map<String, dynamic>>> getAllMeals() async {
