@@ -48,7 +48,17 @@ class MealsListScreen extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: const Icon(Icons.delete, color: Colors.white),
                 ),
-                onDismissed: (direction) {
+                onDismissed: (direction) async {
+                  // Optimistically remove the item from UI
+                  final removedMeal = meal;
+                  final updatedList = List<Map<String, dynamic>>.from(meals)
+                    ..removeAt(index);
+
+                  // Update the provider with the shorter list immediately
+                  ref.read(mealsProvider.notifier).state = AsyncValue.data(
+                    updatedList,
+                  );
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text("$name deleted"),
@@ -58,18 +68,22 @@ class MealsListScreen extends ConsumerWidget {
                         onPressed: () async {
                           await ref
                               .read(supabaseServiceProvider)
-                              .insertMeal(name, calories);
+                              .insertMeal(
+                                removedMeal['name'] as String,
+                                removedMeal['calories'] as int?,
+                              );
                           // ignore: unused_result
                           ref.refresh(mealsProvider);
                         },
                       ),
                     ),
                   );
+                  // Perform delete in Supabase
+                  ref.read(supabaseServiceProvider).deleteMeal(id);
 
-                  ref.read(supabaseServiceProvider).deleteMeal(id).then((_) {
-                    // ignore: unused_result
-                    ref.refresh(mealsProvider);
-                  });
+                  // Refresh provider to sync with Supabaase
+                  // ignore: unused_result
+                  ref.refresh(workoutsProvider);
                 },
                 child: ListTile(
                   title: Text(name),

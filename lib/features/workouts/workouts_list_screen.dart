@@ -52,7 +52,6 @@ class WorkoutsListScreen extends ConsumerWidget {
                   final updatedList = List<Map<String, dynamic>>.from(workouts)
                     ..removeAt(index);
 
-                  //
                   //Update the provider with the shorter list immediately
                   ref.read(workoutsProvider.notifier).state = AsyncValue.data(
                     updatedList,

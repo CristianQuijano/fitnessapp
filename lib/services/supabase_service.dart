@@ -1,5 +1,4 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter/foundation.dart';
 
 final supabase = Supabase.instance.client;
 
@@ -10,7 +9,10 @@ class SupabaseService {
   }
 
   Future<List<Map<String, dynamic>>> getAllMeals() async {
-    return await supabase.from('meals').select();
+    return await supabase
+        .from('meals')
+        .select()
+        .order('created_at', ascending: false);
   }
 
   Future<void> deleteMeal(String id) async {
@@ -23,7 +25,10 @@ class SupabaseService {
   }
 
   Future<List<Map<String, dynamic>>> getAllWorkouts() async {
-    return await supabase.from('workouts').select();
+    return await supabase
+        .from('workouts')
+        .select()
+        .order('created_at', ascending: false);
   }
 
   Future<void> deleteWorkout(String id) async {
