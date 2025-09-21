@@ -51,13 +51,7 @@ class MealsListScreen extends ConsumerWidget {
                 onDismissed: (direction) async {
                   // Optimistically remove the item from UI
                   final removedMeal = meal;
-                  final updatedList = List<Map<String, dynamic>>.from(meals)
-                    ..removeAt(index);
-
-                  // Update the provider with the shorter list immediately
-                  ref.read(mealsProvider.notifier).state = AsyncValue.data(
-                    updatedList,
-                  );
+                  ref.read(mealsProvider.notifier).removeAtIndex(index);
 
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

@@ -40,6 +40,13 @@ class MealsNotifier
     await service.insertMeal(name, calories);
     await _loadMeals();
   }
+
+  void removeAtIndex(int index) {
+    final current = state.value ?? [];
+    final updatedList = List<Map<String, dynamic>>.from(current)
+      ..removeAt(index);
+    state = AsyncValue.data(updatedList);
+  }
 }
 
 final mealsProvider =
