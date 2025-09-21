@@ -49,13 +49,7 @@ class WorkoutsListScreen extends ConsumerWidget {
                 onDismissed: (direction) async {
                   // Optimistically remove the item from UI
                   final removedWorkout = workout;
-                  final updatedList = List<Map<String, dynamic>>.from(workouts)
-                    ..removeAt(index);
-
-                  //Update the provider with the shorter list immediately
-                  ref.read(workoutsProvider.notifier).state = AsyncValue.data(
-                    updatedList,
-                  );
+                  ref.read(workoutsProvider.notifier).removeAtIndex(index);
 
                   // Show snackbar with undo option
                   ScaffoldMessenger.of(context).showSnackBar(

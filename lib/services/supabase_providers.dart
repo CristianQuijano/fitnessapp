@@ -82,6 +82,13 @@ class WorkoutsNotifier
     await service.insertWorkout(name);
     await _loadWorkouts();
   }
+
+  void removeAtIndex(int index) {
+    final current = state.value ?? [];
+    final updatedList = List<Map<String, dynamic>>.from(current)
+      ..removeAt(index);
+    state = AsyncValue.data(updatedList);
+  }
 }
 
 final workoutsProvider =
