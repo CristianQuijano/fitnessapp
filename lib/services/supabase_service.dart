@@ -54,4 +54,19 @@ class SupabaseService {
 
     return response.length;
   }
+
+  Future<int> sumCaloriesBetween(DateTime start, DateTime end) async {
+    final response = await supabase
+        .from('meals')
+        .select('calories')
+        .gte('created_at', start.toIso8601String())
+        .lt('created_at', end.toIso8601String());
+
+    //Sum safely
+    final total = response.fold<int>(
+      0,
+      (sum, row) => sum + ((row['calories'] ?? 0) as int),
+    );
+    return total;
+  }
 }
