@@ -23,6 +23,8 @@ class SummaryScreen extends ConsumerWidget {
                 Text("Meals this week: ${summary['meals']}"),
                 const SizedBox(height: 16),
                 Text("Workouts this week: ${summary['workouts']}"),
+                const SizedBox(height: 16),
+                Text("Calories consumed: ${summary['calories']} kcal"),
               ],
             ),
           );
