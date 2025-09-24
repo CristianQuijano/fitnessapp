@@ -115,6 +115,11 @@ final summaryProvider = FutureProvider.autoDispose<Map<String, int>>((
 
   final mealsCount = await service.countMealsBetween(start, end);
   final workoutsCount = await service.countWorkoutsBetween(start, end);
+  final caloriesTotal = await service.sumCaloriesBetween(start, end);
 
-  return {"meals": mealsCount, "workouts": workoutsCount};
+  return {
+    "meals": mealsCount,
+    "workouts": workoutsCount,
+    "calories": caloriesTotal,
+  };
 });
