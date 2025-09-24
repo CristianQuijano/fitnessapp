@@ -16,6 +16,60 @@ class WorkoutsListScreen extends ConsumerWidget {
     }
   }
 
+  // Dialog for editing workouts
+  Future<void> _showEditWorkoutDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic> workout,
+  ) async {
+    final nameController = TextEditingController(text: workout['name']);
+    final caloriesController = TextEditingController(
+      text: workout['calories']?.toString() ?? '',
+    );
+
+    final result = await showDialog<Map<String, String?>>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Edit workout"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: "Workout name"),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop({'name': nameController.text.trim()});
+              },
+              child: const Text("Save"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null && result['name']!.isNotEmpty) {
+      final updatedName = result['name']!;
+
+      await ref
+          .read(supabaseServiceProvider)
+          .updateWorkout(workout['id'] as String, updatedName);
+
+      // Refresh to see the update
+      // ignore: unused_result
+      ref.refresh(workoutsProvider);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workoutsAsync = ref.watch(workoutsProvider);
@@ -76,7 +130,16 @@ class WorkoutsListScreen extends ConsumerWidget {
                   // ignore: unused_result
                   ref.refresh(workoutsProvider);
                 },
-                child: ListTile(title: Text(name), subtitle: Text(createdAt)),
+                child: ListTile(
+                  title: Text(name),
+                  subtitle: Text(createdAt),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () async {
+                      await _showEditWorkoutDialog(context, ref, workout);
+                    },
+                  ),
+                ),
               );
             },
           );
