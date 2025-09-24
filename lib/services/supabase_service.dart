@@ -62,6 +62,10 @@ class SupabaseService {
     return response.length;
   }
 
+  Future<void> updateWorkout(String id, String name) async {
+    await supabase.from("workouts").update({'name': name}).eq('id', id);
+  }
+
   Future<int> sumCaloriesBetween(DateTime start, DateTime end) async {
     final response = await supabase
         .from('meals')
