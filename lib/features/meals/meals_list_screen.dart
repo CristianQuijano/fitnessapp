@@ -17,6 +17,69 @@ class MealsListScreen extends ConsumerWidget {
     }
   }
 
+  // Dialog for editing meals
+  Future<void> _showEditMealDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic> meal,
+  ) async {
+    final nameController = TextEditingController(text: meal['name']);
+    final caloriesController = TextEditingController(
+      text: meal['calories']?.toString() ?? '',
+    );
+
+    final result = await showDialog<Map<String, String?>>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Edit meal"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: "Meal name"),
+              ),
+              TextField(
+                controller: caloriesController,
+                decoration: const InputDecoration(labelText: "Calories"),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop({
+                  'name': nameController.text.trim(),
+                  'calories': caloriesController.text.trim(),
+                });
+              },
+              child: const Text("Save"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null && result['name']!.isNotEmpty) {
+      final updatedName = result['name']!;
+      final updatedCalories = int.tryParse(result['calories'] ?? '');
+
+      await ref
+          .read(supabaseServiceProvider)
+          .updateMeal(meal['id'] as String, updatedName, updatedCalories);
+
+      // Refresh to see the update
+      // ignore: unused_result
+      ref.refresh(mealsProvider);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mealsAsync = ref.watch(mealsProvider);

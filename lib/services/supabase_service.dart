@@ -19,6 +19,13 @@ class SupabaseService {
     await supabase.from('meals').delete().eq('id', id);
   }
 
+  Future<void> updateMeal(String id, String name, int? calories) async {
+    await supabase
+        .from('meals')
+        .update({'name': name, 'calories': calories})
+        .eq('id', id);
+  }
+
   // --- Workouts ---
   Future<void> insertWorkout(String name) async {
     await supabase.from('workouts').insert({'name': name});
