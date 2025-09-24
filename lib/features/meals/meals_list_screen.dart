@@ -82,6 +82,12 @@ class MealsListScreen extends ConsumerWidget {
                 child: ListTile(
                   title: Text(name),
                   subtitle: Text("${calories ?? 0} kcal • $createdAt"),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () async {
+                      await _showEditMealDialog(context, ref, meal);
+                    },
+                  ),
                 ),
               );
             },
